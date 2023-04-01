@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Container } from 'react-bootstrap';
 import { Outlet } from 'react-router-dom';
 import { Footer } from './Footer';
-import { Header } from './Header';
+import { Header } from './components/Header';
 import { useOverviewStatsQuery } from './hooks/useStatsOverviewQuery';
 import { SliceOverviewStats } from './store/reducers/SliceOverviewStats';
 import { useAppDispatch } from './store/Store';
