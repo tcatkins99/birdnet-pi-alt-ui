@@ -1,5 +1,15 @@
-import { useState } from 'react';
-import { Accordion, Badge, Button, Col, Form, ListGroup, Row } from 'react-bootstrap';
+import { useCallback, useEffect, useState } from 'react';
+import {
+    Accordion,
+    Badge,
+    Button,
+    ButtonGroup,
+    Col,
+    Form,
+    ListGroup,
+    Row,
+    ToggleButton,
+} from 'react-bootstrap';
 import { OverviewStatItem } from '../components/HomepageStats';
 import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
@@ -12,18 +22,15 @@ import { useStatsQuery } from '../hooks/useStatsQuery';
 import { DetectedItemsList } from '../components/DetectedItemsList';
 import { FlickrThumbnailImage } from '../components/FlickrThumbnailImage';
 import { formatNumber } from '../helpers/helpers';
+import {
+    SortAlphaDown,
+    SortAlphaUp,
+    SortNumericDownAlt,
+    SortNumericUp,
+} from 'react-bootstrap-icons';
 
-const sortSpecies = (a: SpeciesListItem, b: SpeciesListItem): number => {
-    if (a.comName > b.comName) {
-        return 1;
-    }
-
-    if (a.comName < b.comName) {
-        return -1;
-    }
-
-    return 0;
-};
+type ConsolidatedResults = { [comName: string]: ResultItem[] };
+type ConsolidatedSortOptions = 'Name' | 'Count';
 
 const StatsFilterControls = (props: { onSubmit: (queryData: BirdsQuery) => void }): JSX.Element => {
     const now = format(new Date(), 'yyyy-MM-dd');
@@ -66,6 +73,18 @@ const StatsFilterControls = (props: { onSubmit: (queryData: BirdsQuery) => void 
         ? [...overviewStats.stats.speciesAllTime]
         : undefined;
 
+    const sortSpecies = (a: SpeciesListItem, b: SpeciesListItem): number => {
+        if (a.comName > b.comName) {
+            return 1;
+        }
+
+        if (a.comName < b.comName) {
+            return -1;
+        }
+
+        return 0;
+    };
+
     return (
         <Form onSubmit={onSubmit}>
             <Row>
@@ -106,24 +125,24 @@ const StatsFilterControls = (props: { onSubmit: (queryData: BirdsQuery) => void 
     );
 };
 
-const consolidateResults = (
-    results: ResultItem[],
-): {
-    [comName: string]: ResultItem[];
-} => {
-    const consolidated: { [comName: string]: ResultItem[] } = {};
+/**
+ * Consolidates the search results response into an object with key of common name
+ * and values of an array of ResultItem[]
+ */
+const conslidateSearchResults = (results: ResultItem[]): ConsolidatedResults => {
+    const consolidatedResults: ConsolidatedResults = {};
 
     results.forEach((item) => {
         const comName = item.comName;
 
-        if (!(comName in consolidated)) {
-            consolidated[comName] = [];
+        if (!(comName in consolidatedResults)) {
+            consolidatedResults[comName] = [];
         }
 
-        consolidated[comName].push(item);
+        consolidatedResults[comName].push(item);
     });
 
-    return consolidated;
+    return consolidatedResults;
 };
 
 const ResultAccordion = (props: { comName: string; results: ResultItem[] }): JSX.Element => {
@@ -132,12 +151,12 @@ const ResultAccordion = (props: { comName: string; results: ResultItem[] }): JSX
 
     const onEnter = (node: HTMLElement, isAppearing: boolean): void => {
         setResults(props.results);
-    }
+    };
 
     return (
         <Accordion className="mb-2">
             <Accordion.Item eventKey={comName}>
-                <Accordion.Header >
+                <Accordion.Header>
                     <div className="d-flex justify-content-between w-100 align-items-center me-2">
                         <div className="d-flex align-items-center">
                             <FlickrThumbnailImage
@@ -154,7 +173,7 @@ const ResultAccordion = (props: { comName: string; results: ResultItem[] }): JSX
                     </div>
                 </Accordion.Header>
                 <Accordion.Body onEnter={onEnter}>
-                    <ListGroup className='align-items-center'>
+                    <ListGroup className="align-items-center">
                         <DetectedItemsList results={results} />
                     </ListGroup>
                 </Accordion.Body>
@@ -175,28 +194,179 @@ const SearchResultsStatsSummary = (props: {
     );
 };
 
-const SearchResults = (props: { data?: RecentsResponse | null}): JSX.Element | null => {
-    const { data } = props;
+const SearchResultsSortControl = (props: {
+    onSortChange: (field: ConsolidatedSortOptions, asc: boolean) => void;
+}): JSX.Element => {
+    const [asc, setAsc] = useState(true);
+    const [sortField, setSortField] = useState<ConsolidatedSortOptions>('Name');
 
-    if (data?.results.length) {
-        const numResults = data.results.length;
-        const consolidated = consolidateResults(data.results);
+    const sortOptions = [
+        {
+            value: 'Name',
+        },
+        {
+            value: 'Count',
+        },
+    ];
+
+    const { onSortChange } = props;
+
+    const onSortFieldChange = (evt: React.ChangeEvent<HTMLInputElement>): void => {
+        if (evt.currentTarget?.value) {
+            if (evt.currentTarget.value === 'Name' || evt.currentTarget.value === 'Count') {
+                setSortField(evt.currentTarget.value);
+            }
+        }
+    };
+
+    useEffect(() => {
+        setAsc(sortField === 'Name');
+    }, [sortField]);
+
+    const toggleAsc = (): void => {
+        setAsc((prevValue) => !prevValue);
+    };
+
+    useEffect(() => {
+        onSortChange(sortField, asc);
+    }, [onSortChange, asc, sortField]);
+
+    const sortUpIcon = sortField === 'Name' ? <SortAlphaDown /> : <SortNumericUp />;
+    const sortDownIcon = sortField === 'Name' ? <SortAlphaUp /> : <SortNumericDownAlt />;
+
+    return (
+        <ButtonGroup size="sm">
+            {sortOptions.map((radio, idx) => (
+                <ToggleButton
+                    key={`radio-${idx}`}
+                    id={`radio-${idx}`}
+                    type="radio"
+                    variant={sortField === radio.value ? 'outline-primary' : 'outline-success'}
+                    name="radio"
+                    value={radio.value}
+                    checked={sortField === radio.value}
+                    onChange={onSortFieldChange}
+                >
+                    {radio.value}
+                </ToggleButton>
+            ))}
+            <Button onClick={toggleAsc}>{asc ? sortUpIcon : sortDownIcon}</Button>
+        </ButtonGroup>
+    );
+};
+
+const SearchResults = (props: { data?: RecentsResponse | null }): JSX.Element | null => {
+    const { data } = props;
+    const [results, setResults] = useState<ConsolidatedResults>();
+
+    useEffect(() => {
+        if (data?.results && data.results.length > 0) {
+            setResults(conslidateSearchResults(data.results));
+        }
+    }, [data]);
+
+    const sortByName = (responseItems: ResultItem[], asc: boolean): void => {
+        const consolidatedResults = conslidateSearchResults(responseItems);
+        const keys = Object.keys(consolidatedResults).sort();
+
+        if (!asc) {
+            keys.reverse();
+        }
+
+        const sorted: ConsolidatedResults = {};
+
+        keys.forEach((comName) => {
+            sorted[comName] = consolidatedResults[comName];
+        });
+
+        setResults(sorted);
+    };
+
+    const sortByCount = (responseItems: ResultItem[], asc: boolean): void => {
+        const consolidatedResults = conslidateSearchResults(responseItems);
+
+        const sortable = new Array<[string, number]>();
+
+        Object.keys(consolidatedResults).forEach((comName) => {
+            sortable.push([comName, consolidatedResults[comName].length]);
+        });
+
+        sortable.sort((a: [string, number], b: [string, number]) => {
+            if (a[1] > b[1]) {
+                return 1;
+            }
+
+            if (a[1] < b[1]) {
+                return -1;
+            }
+
+            // Sort by name if there's species with the same count
+            if (a[0] > b[0]) {
+                return 1;
+            }
+
+            if (a[0] < b[0]) {
+                return -1;
+            }
+
+            return 0;
+        });
+
+        if (!asc) {
+            sortable.reverse();
+        }
+
+        const sorted: ConsolidatedResults = {};
+
+        sortable.forEach((s) => {
+            const comName = s[0];
+            sorted[comName] = consolidatedResults[comName];
+        });
+
+        setResults(sorted);
+    };
+
+    const onSortChange = useCallback(
+        (sortBy: ConsolidatedSortOptions, asc: boolean): void => {
+            if (data?.results && data.results.length > 0) {
+                if (data?.results) {
+                    switch (sortBy) {
+                        case 'Name':
+                            sortByName(data.results, asc);
+                            break;
+
+                        case 'Count':
+                            sortByCount(data.results, asc);
+                            break;
+                    }
+                }
+            }
+        },
+        [data?.results],
+    );
+
+    if (results) {
+        const numResults = data?.results.length ?? 0;
 
         return (
             <>
                 <div className="mb-2 d-flex justify-content-center">
                     <SearchResultsStatsSummary
                         total={numResults}
-                        distinctSpecies={Object.keys(consolidated).length}
+                        distinctSpecies={Object.keys(results).length}
                     />
                 </div>
 
-                {Object.keys(consolidated).map((comName, idx) => {
+                <div className="my-2 d-flex justify-content-end">
+                    <SearchResultsSortControl onSortChange={onSortChange} />
+                </div>
+
+                {Object.keys(results).map((comName, idx) => {
                     return (
                         <ResultAccordion
                             key={`${idx}_${comName}`}
                             comName={comName}
-                            results={consolidated[comName]}
+                            results={results[comName]}
                         />
                     );
                 })}
