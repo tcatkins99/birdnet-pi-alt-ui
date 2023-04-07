@@ -2,9 +2,9 @@ import { Badge } from 'react-bootstrap';
 import { formatNumber } from '../helpers/helpers';
 
 const getConfidenceColor = (confidence: number): string => {
-    if (confidence < 0.5) {
+    if (confidence < 0.75) {
         return 'danger';
-    } else if (confidence < 0.75) {
+    } else if (confidence < 0.80) {
         return 'warning';
     } else {
         return 'success';
