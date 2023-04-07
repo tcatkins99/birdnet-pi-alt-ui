@@ -6,7 +6,6 @@ import { useResultItemModal } from '../hooks/useResultItemModal';
 import { ResultItem } from '../types/BirdnetPi';
 import { ConfidenceBadge } from './ConfidenceLabel';
 import { FlickrThumbnailImage } from './FlickrThumbnailImage';
-import { LazyLoadImage } from 'react-lazy-load-image-component';
 import InfiniteScroll from 'react-infinite-scroller';
 
 const DetectedItemHeader = (props: { recentItem: ResultItem }): JSX.Element => {
@@ -16,7 +15,7 @@ const DetectedItemHeader = (props: { recentItem: ResultItem }): JSX.Element => {
             <FlickrThumbnailImage recentItem={recentItem} />
 
             <div className="d-flex flex-column flex-md-row align-items-center justify-content-md-between w-100 small ms-2">
-                <div>
+                <div className='d-flex flex-column align-items-start'>
                     <div>{recentItem.comName}</div>
 
                     <div className="small fst-italic">{recentItem.sciName}</div>
