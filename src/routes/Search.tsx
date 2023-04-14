@@ -28,11 +28,15 @@ import {
     SortNumericDownAlt,
     SortNumericUp,
 } from 'react-bootstrap-icons';
+import { LoadingSpinner } from '../components/Spinner';
 
 type ConsolidatedResults = { [comName: string]: ResultItem[] };
 type ConsolidatedSortOptions = 'Name' | 'Count';
 
-const StatsFilterControls = (props: { onSubmit: (queryData: BirdsQuery) => void }): JSX.Element => {
+const StatsFilterControls = (props: {
+    isFetching: boolean;
+    onSubmit: (queryData: BirdsQuery) => void;
+}): JSX.Element => {
     const now = format(new Date(), 'yyyy-MM-dd');
 
     const [startDate, setStartDate] = useState<string | undefined>(now);
@@ -86,41 +90,44 @@ const StatsFilterControls = (props: { onSubmit: (queryData: BirdsQuery) => void 
     };
 
     return (
-        <Form onSubmit={onSubmit}>
-            <Row>
-                <Col sm={4} md={3}>
-                    <Form.Label className="small">Start Date</Form.Label>
-                    <Form.Control type="date" value={startDate} onChange={onStartChange} />
-                </Col>
-                <Col sm={4} md={3}>
-                    <Form.Label className="small">End Date</Form.Label>
-                    <Form.Control type="date" value={endDate} onChange={onEndChange} />
-                </Col>
-                <Col>
-                    <Form.Label className="small">Species</Form.Label>
-                    {options ? (
-                        <Typeahead
-                            id="spcies-options"
-                            multiple
-                            options={options.sort(sortSpecies)}
-                            onChange={onSpeciesChange}
-                            placeholder="Choose Species"
-                            labelKey="comName"
-                            renderMenuItemChildren={(option, props, index): JSX.Element => {
-                                const item = option as ResultItem;
-                                return (
-                                    <div>
-                                        {item.comName} ({item.sciName})
-                                    </div>
-                                );
-                            }}
-                        />
-                    ) : null}
-                </Col>
-            </Row>
-            <div className="d-flex justify-content-end mt-2">
-                <Button type="submit">Search</Button>
-            </div>
+        <Form onSubmit={onSubmit} aria-disabled={props.isFetching}>
+            <fieldset disabled={props.isFetching}>
+                <Row>
+                    <Col sm={4} md={3}>
+                        <Form.Label className="small">Start Date</Form.Label>
+                        <Form.Control type="date" value={startDate} onChange={onStartChange} />
+                    </Col>
+                    <Col sm={4} md={3}>
+                        <Form.Label className="small">End Date</Form.Label>
+                        <Form.Control type="date" value={endDate} onChange={onEndChange} />
+                    </Col>
+                    <Col>
+                        <Form.Label className="small">Species</Form.Label>
+                        {options ? (
+                            <Typeahead
+                                id="spcies-options"
+                                multiple
+                                options={options.sort(sortSpecies)}
+                                onChange={onSpeciesChange}
+                                placeholder="Choose Species"
+                                labelKey="comName"
+                                renderMenuItemChildren={(option, props, index): JSX.Element => {
+                                    const item = option as ResultItem;
+                                    return (
+                                        <div>
+                                            {item.comName} ({item.sciName})
+                                        </div>
+                                    );
+                                }}
+                            />
+                        ) : null}
+                    </Col>
+                </Row>
+                <div className="d-flex justify-content-end align-items-center mt-2">
+                    <LoadingSpinner show={props.isFetching} className='me-2'/>
+                    <Button type="submit">Search</Button>
+                </div>
+            </fieldset>
         </Form>
     );
 };
@@ -260,7 +267,7 @@ const SearchResults = (props: { data?: RecentsResponse | null }): JSX.Element | 
     const [results, setResults] = useState<ConsolidatedResults>();
 
     useEffect(() => {
-        if (data?.results && data.results.length > 0) {
+        if (data?.results) {
             setResults(conslidateSearchResults(data.results));
         }
     }, [data]);
@@ -379,7 +386,7 @@ const SearchResults = (props: { data?: RecentsResponse | null }): JSX.Element | 
 
 export const Search = (): JSX.Element => {
     const [queryData, setQueryData] = useState<BirdsQuery>();
-    const { data } = useStatsQuery(queryData);
+    const { isFetching, data } = useStatsQuery(queryData);
 
     const onSubmit = (data: BirdsQuery): void => {
         setQueryData(data);
@@ -387,7 +394,7 @@ export const Search = (): JSX.Element => {
 
     return (
         <>
-            <StatsFilterControls onSubmit={onSubmit} />
+            <StatsFilterControls isFetching={isFetching} onSubmit={onSubmit} />
 
             <SearchResults data={data} />
         </>
