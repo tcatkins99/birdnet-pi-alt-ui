@@ -14,7 +14,7 @@ export const FlickrThumbnailImage = (props: {
     return (
         <a href={recentItem.image.flickrPage} target="_blank" rel="noopener noreferer" className={props.className}>
             <img
-                className="rounded-circle"
+                className="rounded-circle border border-2 border-primary"
                 src={recentItem.image.thumbnail}
                 width={props.height ?? 75}
                 height={props.height ?? 75}

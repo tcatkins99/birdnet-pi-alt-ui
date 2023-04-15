@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, ButtonGroup, Card, Col } from 'react-bootstrap';
-import { Fullscreen, InfoCircleFill } from 'react-bootstrap-icons';
+import { Fullscreen, InfoCircleFill, Wikipedia } from 'react-bootstrap-icons';
 import { BIRDS_HOST } from '../Constants';
 import { useResultItemModal } from '../hooks/useResultItemModal';
 import { ResultItem } from '../types/BirdnetPi';
@@ -13,18 +13,12 @@ const DetectedItemHeader = (props: { recentItem: ResultItem }): JSX.Element => {
     return (
         <div className="d-flex flex-column flex-md-row align-items-center">
             <FlickrThumbnailImage recentItem={recentItem} />
-
-            <div className="d-flex flex-column flex-md-row align-items-center justify-content-md-between w-100 small ms-2">
-                <div className='d-flex flex-column align-items-start'>
-                    <div>{recentItem.comName}</div>
-
-                    <div className="small fst-italic">{recentItem.sciName}</div>
-                </div>
-                <div className="small mt-1 mt-md-0 d-flex flex-row flex-md-column text-secondary text-end">
-                    <div>{recentItem.time}</div>
-                    <span className="d-block d-md-none mx-2">•</span>
-                    <div>{recentItem.date}</div>
-                </div>
+            <div className="d-flex flex-column align-items-md-start ms-md-2">
+                <p className="fs-5 mb-0">{recentItem.comName}</p>
+                <p className="fs-6 fw-light fst-italic mb-0">{recentItem.sciName}</p>
+                <p className="fw-light text-secondary mb-0" style={{ fontSize: '0.8rem' }}>
+                    {recentItem.time} • {recentItem.date}
+                </p>
             </div>
         </div>
     );
@@ -78,7 +72,7 @@ export const DetectedItemCard = (props: {
                                 title="See More at Wikipedia"
                                 aria-label="See More at Wikipedia"
                             >
-                                <InfoCircleFill />
+                                <Wikipedia />
                             </Button>
 
                             {onMaximizeClick ? (

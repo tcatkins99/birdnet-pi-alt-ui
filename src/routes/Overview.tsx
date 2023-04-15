@@ -1,6 +1,6 @@
 import { Form } from 'react-bootstrap';
 import { DEFAULT_MAX_INITIAL_ITEMS_TO_RETRIEVE } from '../Constants';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import useDebounce from '../hooks/useDebounce';
 import { HomepageStats } from '../components/HomepageStats';
 import { DetectedItemsList } from '../components/DetectedItemsList';
@@ -9,7 +9,7 @@ import { useStatsQuery } from '../hooks/useStatsQuery';
 const RecentsList = (): JSX.Element => {
     const [maxResults, setMaxResults] = useState(DEFAULT_MAX_INITIAL_ITEMS_TO_RETRIEVE);
     const queryData = useDebounce({ limit: maxResults }, 500);
-    
+
     const { data } = useStatsQuery(queryData);
 
     const onLimitChange = (evt: React.FormEvent<HTMLInputElement>): void => {
@@ -21,9 +21,7 @@ const RecentsList = (): JSX.Element => {
         <>
             <div className="text-center">
                 <div className="d-flex align-items-center justify-content-center">
-                    <div>
-                        <h5>Latest Detections</h5>
-                    </div>
+                    <h5>Latest Detections</h5>
                 </div>
 
                 <div className="d-flex justify-content-center align-items-center">
